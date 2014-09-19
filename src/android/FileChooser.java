@@ -36,7 +36,6 @@ public class FileChooser extends CordovaPlugin {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("*/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
 
         Intent chooser = Intent.createChooser(intent, "Select File");
         cordova.startActivityForResult(this, chooser, PICK_FILE_REQUEST);
@@ -45,6 +44,7 @@ public class FileChooser extends CordovaPlugin {
         pluginResult.setKeepCallback(true);
         callback = callbackContext;
         callbackContext.sendPluginResult(pluginResult);
+        
     }
 
     @Override
@@ -55,11 +55,36 @@ public class FileChooser extends CordovaPlugin {
             if (resultCode == Activity.RESULT_OK) {
 
                 Uri uri = data.getData();
-
+                int nameIndex = -1;
+                int sizeIndex = -1;
+                
                 if (uri != null) {
-
+                	Context context=this.cordova.getActivity().getApplicationContext();
                     Log.w(TAG, uri.toString());
-                    callback.success(uri.toString());
+                    JSONObject jo = new JSONObject();
+                    String mimeType = context.getContentResolver().getType(uri);
+                    Cursor returnCursor = context.getContentResolver().query(uri, null, null, null, null);
+                    if(returnCursor!=null)
+                    {
+                    	nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+                        returnCursor.moveToFirst();
+                    }
+                    
+                    
+                    try {
+						jo.put("url", uri.toString());
+						jo.put("type", mimeType);
+						if(sizeIndex>-1)
+						{
+							jo.put("size", Long.toString(returnCursor.getLong(sizeIndex)));
+							jo.put("filename", returnCursor.getString(nameIndex));
+						}
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                    callback.success(jo.toString());
 
                 } else {
 
