@@ -27,5 +27,3 @@ The success callback get the uri of the selected file
 Screenshot
 
 ![Screenshot](filechooser.png "Screenshot")
-
-
